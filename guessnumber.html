@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>guessNumber</title>
+  <link href="main.css" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #222;
+      --button-bg: #3498db;
+      --button-hover: #2980b9;
+      --bg-image: none;
+    }
+  
+    body {
+      background-color: var(--bg-color);
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+  
+    .button {
+      background: var(--button-bg);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.3s ease;
+    }
+  
+    .button:hover {
+      background: var(--button-hover);
+    }
+    
+  </style>
+  <script src="theme.js">document.addEventListener("DOMContentLoaded", () => {
+    const themes = {
+      default: {
+        '--bg-color': '#fff',
+        '--text-color': '#222',
+        '--button-bg': '#3498db',
+        '--button-hover': '#2980b9',
+        '--bg-image': 'none'
+      },
+      fart: {
+        '--bg-color': '#4d2c1d',
+        '--text-color': '#f1c40f',
+        '--button-bg': '#8e5a2e',
+        '--button-hover': '#6e4121',
+        '--bg-image': 'none'
+      },
+      futuristic: {
+        '--bg-color': '#0d0d0d',
+        '--text-color': '#00ffcc',
+        '--button-bg': '#111',
+        '--button-hover': '#333',
+        '--bg-image': "url('https://yourdomain.com/futuristic.jpg')" // Replace
+      },
+      cave: {
+        '--bg-color': '#1a1a1a',
+        '--text-color': '#ccccaa',
+        '--button-bg': '#3b2e2a',
+        '--button-hover': '#5a423b',
+        '--bg-image': "url('https://yourdomain.com/cave.jpg')" // Replace
+      }
+    };
+  
+    const root = document.documentElement;
+    const themeName = localStorage.getItem('theme') || 'default';
+    const theme = themes[themeName] || themes.default;
+    for (const key in theme) {
+      root.style.setProperty(key, theme[key]);
+    }
+  });
+  </script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      color: #222;
+      text-align: center;
+      padding-top: 40px;
+      transition: background 0.5s ease;
+    }
+
+    .game-container {
+      max-width: 400px;
+      margin: 50px auto;
+      text-align: center;
+    }
+
+    .input-field {
+      padding: 10px;
+      width: 60%;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .guess-button {
+      padding: 10px 20px;
+      background-color: #4a90e2;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .guess-button:hover {
+      background-color: #357ab8;
+      transform: translateY(-1px);
+    }
+
+    .message {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .button {
+      display: inline-block;
+      margin: 12px;
+      padding: 14px 24px;
+      font-size: 18px;
+      background: #3498db;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background: #2980b9;
+    }
+
+    .fade-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      opacity: 1;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      z-index: 999;
+    }
+
+    .fade-overlay.inactive {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .fade-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .ripple {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(1);
+      animation: rippleEffect 1.2s ease-out forwards;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    @keyframes rippleEffect {
+      to {
+        transform: translate(-50%, -50%) scale(20);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="fade-overlay" id="fade"></div>
+
+  <h1 class="inter">Guess the Number</h1>
+  <p class="inter">Luke's Hub</p>
+
+  <nav class="nav">
+    <a href="main.html" class="inter button">Main Page</a>
+  </nav>
+
+  <div class="game-container inter">
+    <input type="number" id="guessInput" class="input-field" placeholder="1-100" />
+    <br />
+    <button class="guess-button" onclick="checkGuess()">Guess</button>
+    <p id="message" class="message"></p>
+  </div>
+
+  <script>
+    // Ripple effect on mouse down
+    document.addEventListener('mousedown', (e) => {
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.left = `${e.clientX}px`;
+      ripple.style.top = `${e.clientY}px`;
+      document.body.appendChild(ripple);
+      setTimeout(() => {
+        ripple.remove();
+      }, 1200);
+    });
+
+    // Fade in on load
+    const fade = document.getElementById('fade');
+    window.addEventListener('load', () => {
+      fade.classList.add('inactive');
+    });
+
+    // Fade out on link click
+    document.querySelectorAll('a.button').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        const href = btn.getAttribute('href');
+        fade.classList.remove('inactive');
+        fade.classList.add('active');
+        setTimeout(() => {
+          window.location.href = href;
+        }, 600);
+      });
+    });
+
+    // Guessing logic
+    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    function checkGuess() {
+      const guess = parseInt(document.getElementById('guessInput').value);
+      const message = document.getElementById('message');
+      if (isNaN(guess) || guess < 1 || guess > 100) {
+        message.textContent = "Please enter a number between 1 and 100.";
+        message.style.color = "#e67e22";
+        return;
+      }
+
+      if (guess === randomNumber) {
+        message.textContent = "🎉 Correct! You guessed the number!";
+        message.style.color = "#27ae60";
+      } else if (guess < randomNumber) {
+        message.textContent = "Too low! Try again.";
+        message.style.color = "#c0392b";
+      } else {
+        message.textContent = "Too high! Try again.";
+        message.style.color = "#c0392b";
+      }
+    }
+  </script>
+</body>
+</html>

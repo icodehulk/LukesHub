@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luke's Hub</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+    :root {
+      --bg-color: #fff;
+      --text-color: #222;
+      --button-bg: #3498db;
+      --button-hover: #2980b9;
+      --bg-image: none;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text-color);
+      text-align: center;
+      padding-top: 80px;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    .button {
+      display: inline-block;
+      margin: 12px;
+      padding: 14px 24px;
+      font-size: 18px;
+      background: var(--button-bg);
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background: var(--button-hover);
+      transform: scale(1.05);
+    }
+
+    .fade-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      z-index: 999;
+    }
+
+    .fade-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .ripple {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(1);
+      animation: rippleEffect 1.2s ease-out forwards;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    @keyframes rippleEffect {
+      to {
+        transform: translate(-50%, -50%) scale(20);
+        opacity: 0;
+      }
+    }
+
+    .theme-controls {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="fade-overlay" id="fade"></div>
+
+  <h1 class="inter">Welcome to Luke's Hub</h1>
+  <p class="inter">What minigames would you like to play?</p>
+
+  <nav class="nav">
+    <a href="matchingcards.html" class="inter button">Matching Cards</a>
+    <a href="guessnumber.html" class="inter button">Guess the Number</a>
+    <a href="advancedtaggame.html" class="inter button">Tag</a>
+    <a href="flappy.html" class="inter button">Flappy Bird</a>
+  </nav>
+
+  <div class="theme-controls">
+    <h3>Themes</h3>
+    <button class="button" data-theme="default">Default</button>
+    <button class="button" data-theme="fart">Mystery</button>
+    <button class="button" data-theme="futuristic">Futuristic</button>
+    <button class="button" data-theme="cave">Cave</button>
+  </div>
+
+  <script>
+    // Theme definitions
+    const themes = {
+      default: {
+        '--bg-color': '#fff',
+        '--text-color': '#222',
+        '--button-bg': '#3498db',
+        '--button-hover': '#2980b9',
+        '--bg-image': 'none'
+      },
+      fart: {
+        '--bg-color': '#4d2c1d',
+        '--text-color': '#f1c40f',
+        '--button-bg': '#8e5a2e',
+        '--button-hover': '#6e4121',
+        '--bg-image': 'none'
+      },
+      futuristic: {
+        '--bg-color': '#0d0d0d',
+        '--text-color': '#00ffcc',
+        '--button-bg': '#111',
+        '--button-hover': '#333',
+        '--bg-image': "url('https://yourdomain.com/futuristic.jpg')" // Replace with your URL
+      },
+      cave: {
+        '--bg-color': '#1a1a1a',
+        '--text-color': '#ccccaa',
+        '--button-bg': '#3b2e2a',
+        '--button-hover': '#5a423b',
+        '--bg-image': "url('https://yourdomain.com/cave.jpg')" // Replace with your URL
+      }
+    };
+
+    const root = document.documentElement;
+
+    function applyTheme(themeName) {
+      const theme = themes[themeName] || themes.default;
+      for (const key in theme) {
+        root.style.setProperty(key, theme[key]);
+      }
+      localStorage.setItem('theme', themeName);
+    }
+
+    // Apply saved theme on load
+    applyTheme(localStorage.getItem('theme') || 'default');
+
+    // Theme button handlers
+    document.querySelectorAll('.theme-controls .button').forEach(button => {
+      button.addEventListener('click', () => {
+        applyTheme(button.dataset.theme);
+      });
+    });
+
+    // Ripple effect
+    document.addEventListener('mousedown', e => {
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.left = `${e.clientX}px`;
+      ripple.style.top = `${e.clientY}px`;
+      document.body.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 1200);
+    });
+
+    // Fade transition
+    const fade = document.getElementById('fade');
+    document.querySelectorAll('a.button').forEach(button => {
+      button.addEventListener('click', e => {
+        e.preventDefault();
+        const href = button.getAttribute('href');
+        fade.classList.add('active');
+        setTimeout(() => {
+          window.location.href = href;
+        }, 600);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="main.css" rel="stylesheet" />
+  <title>Tag Game</title>
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #222;
+      --button-bg: #3498db;
+      --button-hover: #2980b9;
+      --bg-image: none;
+    }
+  
+    body {
+      background-color: var(--bg-color);
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+  
+    .button {
+      background: var(--button-bg);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.3s ease;
+    }
+  
+    .button:hover {
+      background: var(--button-hover);
+    }
+  </style>
+  <script src="theme.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #2c2c2c;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+      color: white;
+    }
+
+    .game-container {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      background-color: #444;
+      border: 3px solid white;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .player, .bot {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .player {
+      background-color: #3498db;
+    }
+
+    .bot {
+      background-color: #e74c3c;
+    }
+
+    .obstacle {
+      position: absolute;
+      background-color: #27ae60;
+      border-radius: 6px;
+    }
+
+    .message {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      z-index: 10;
+    }
+
+    .timer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      z-index: 10;
+      color: white;
+    }
+
+    .restart-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      color: #2c2c2c;
+      font-weight: 600;
+      font-size: 18px;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: none;
+      z-index: 20;
+      transition: all 0.3s ease;
+    }
+
+    .restart-btn:hover {
+      background: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="main.html" class="inter button">Main Page</a>
+</nav>
+  <div class="game-container" id="game">
+    <div class="message" id="message">Avoid the bot!</div>
+    <div class="timer" id="timer">30s</div>
+    <button class="restart-btn" id="restart">Restart</button>
+    <div class="player" id="player"></div>
+    <div class="bot" id="bot"></div>
+
+    <!-- Obstacles -->
+    <div class="obstacle" style="width: 100px; height: 100px; top: 200px; left: 250px;"></div>
+    <div class="obstacle" style="width: 150px; height: 50px; top: 400px; left: 100px;"></div>
+    <div class="obstacle" style="width: 80px; height: 200px; top: 100px; left: 600px;"></div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const bot = document.getElementById('bot');
+    const message = document.getElementById('message');
+    const timerDisplay = document.getElementById('timer');
+    const restartBtn = document.getElementById('restart');
+    const obstacles = Array.from(document.querySelectorAll('.obstacle'));
+  
+    const gameRect = game.getBoundingClientRect();
+    const playerSize = 40;
+    let keys = {};
+    let speed = 3;
+    let sprinting = false;
+    let canSprint = true;
+    let sprintTimer = 0;
+    let sprintCooldown = 0;
+    let playerPos = { x: 100, y: 100 };
+    let botPos = { x: 600, y: 400 };
+    let timeLeft = 30;
+    let gameRunning = true;
+  
+    const cooldownText = document.createElement('div');
+    cooldownText.style.position = 'absolute';
+    cooldownText.style.top = '40px';
+    cooldownText.style.left = '10px';
+    cooldownText.style.fontSize = '16px';
+    cooldownText.style.color = 'white';
+    cooldownText.style.zIndex = '10';
+    game.appendChild(cooldownText);
+  
+    document.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key.toLowerCase() === 'e' && canSprint && gameRunning) {
+        sprinting = true;
+        canSprint = false;
+        sprintTimer = 90; // lasts 1.5s at 60fps
+        sprintCooldown = 300; // cooldown 5s at 60fps
+      }
+    });
+    document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    restartBtn.onclick = () => location.reload();
+  
+    function rectsIntersect(r1, r2) {
+      return !(r2.left > r1.right ||
+               r2.right < r1.left ||
+               r2.top > r1.bottom ||
+               r2.bottom < r1.top);
+    }
+  
+    function willCollide(x, y) {
+      const tempRect = {
+        left: x,
+        top: y,
+        right: x + playerSize,
+        bottom: y + playerSize
+      };
+      for (let obs of obstacles) {
+        const o = obs.getBoundingClientRect();
+        const oRect = {
+          left: o.left - gameRect.left,
+          top: o.top - gameRect.top,
+          right: o.right - gameRect.left,
+          bottom: o.bottom - gameRect.top
+        };
+        if (rectsIntersect(tempRect, oRect)) return true;
+      }
+      return false;
+    }
+  
+    function movePlayer() {
+      let dx = 0, dy = 0;
+      const moveSpeed = sprinting ? speed * 2 : speed;
+      if (keys['w']) dy -= moveSpeed;
+      if (keys['s']) dy += moveSpeed;
+      if (keys['a']) dx -= moveSpeed;
+      if (keys['d']) dx += moveSpeed;
+  
+      const newX = playerPos.x + dx;
+      const newY = playerPos.y + dy;
+  
+      if (newX >= 0 && newX + playerSize <= game.clientWidth && !willCollide(newX, playerPos.y)) {
+        playerPos.x = newX;
+      }
+      if (newY >= 0 && newY + playerSize <= game.clientHeight && !willCollide(playerPos.x, newY)) {
+        playerPos.y = newY;
+      }
+  
+      player.style.left = playerPos.x + 'px';
+      player.style.top = playerPos.y + 'px';
+    }
+  
+    function moveBot() {
+      let dx = playerPos.x - botPos.x;
+      let dy = playerPos.y - botPos.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist === 0) return;
+  
+      dx /= dist;
+      dy /= dist;
+  
+      const botNewX = botPos.x + dx * speed;
+      const botNewY = botPos.y + dy * speed;
+  
+      if (!willCollide(botNewX, botPos.y) && botNewX >= 0 && botNewX + playerSize <= game.clientWidth) {
+        botPos.x = botNewX;
+      }
+      if (!willCollide(botPos.x, botNewY) && botNewY >= 0 && botNewY + playerSize <= game.clientHeight) {
+        botPos.y = botNewY;
+      }
+  
+      bot.style.left = botPos.x + 'px';
+      bot.style.top = botPos.y + 'px';
+    }
+  
+    function checkTag() {
+      const dx = playerPos.x - botPos.x;
+      const dy = playerPos.y - botPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < playerSize) {
+        endGame('You got tagged! Bot wins.');
+      }
+    }
+  
+    function endGame(resultText) {
+      message.textContent = resultText;
+      gameRunning = false;
+      restartBtn.style.display = 'block';
+    }
+  
+    function updateTimer() {
+      if (!gameRunning) return;
+      timeLeft--;
+      timerDisplay.textContent = timeLeft + 's';
+      if (timeLeft <= 0) {
+        endGame('You survived! You win.');
+      }
+    }
+  
+    let loop;
+    function update() {
+      if (!gameRunning) return;
+  
+      if (sprinting) {
+        sprintTimer--;
+        if (sprintTimer <= 0) {
+          sprinting = false;
+        }
+      } else if (!canSprint) {
+        sprintCooldown--;
+        if (sprintCooldown <= 0) {
+          canSprint = true;
+        }
+      }
+  
+      cooldownText.textContent = canSprint ? 'Sprint ready (E)' : `Sprint CD: ${(sprintCooldown / 60).toFixed(1)}s`;
+  
+      movePlayer();
+      moveBot();
+      checkTag();
+      loop = requestAnimationFrame(update);
+    }
+  
+    setInterval(updateTimer, 1000);
+    update();
+  </script>
+</body>
+</html>
+<script>
+  document.addEventListener('mousedown', (e) => {
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.left = `${e.clientX}px`;
+      ripple.style.top = `${e.clientY}px`;
+      document.body.appendChild(ripple);
+
+      setTimeout(() => {
+          ripple.remove();
+      }, 1200); // matches animation duration
+  });
+</script>
+<script>
+document.addEventListener('mousedown', (e) => {
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.left = `${e.clientX}px`;
+  ripple.style.top = `${e.clientY}px`;
+  document.body.appendChild(ripple);
+
+  setTimeout(() => {
+      ripple.remove();
+  }, 1200); // matches animation duration
+});
+</script>

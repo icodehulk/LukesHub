@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Bird</title>
+  <link rel="stylesheet" href="main.css" />
+  <script src="theme.js" defer></script>
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #222;
+      --button-bg: #3498db;
+      --button-hover: #2980b9;
+      --bg-image: none;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: transparent;
+    }
+
+    .button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: var(--button-bg);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .button:hover {
+      background: var(--button-hover);
+    }
+
+    .score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: var(--text-color);
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <a class="button" href="main.html">← Back</a>
+  <div class="score" id="score">0</div>
+  <canvas id="game" width="480" height="640"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+  
+    const gravity = 0.3;
+    const jump = -7;
+    const bird = { x: 50, y: 150, width: 40, height: 40, velocity: 0 };
+    const pipes = [];
+    let score = 0;
+    let frame = 0;
+    let gameOver = false;
+  
+    function reset() {
+      bird.y = 150;
+      bird.velocity = 0;
+      pipes.length = 0;
+      score = 0;
+      frame = 0;
+      gameOver = false;
+    }
+  
+    function drawBird() {
+      ctx.fillStyle = "#f1c40f";
+      ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+    }
+  
+    function drawPipes() {
+      ctx.fillStyle = "#2ecc71";
+      pipes.forEach(pipe => {
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+        ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom);
+      });
+    }
+  
+    function update() {
+      if (gameOver) return;
+  
+      frame++;
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+  
+      // Add pipes more frequently
+      if (frame % 85 === 0) {
+        const gap = 190;
+        const top = Math.floor(Math.random() * (canvas.height - gap - 100)) + 30;
+        const bottom = canvas.height - top - gap;
+        pipes.push({ x: canvas.width, top, bottom, width: 60 });
+      }
+  
+      // Move pipes faster
+      pipes.forEach(pipe => pipe.x -= 2.5);
+  
+      // Remove offscreen pipes
+      if (pipes.length && pipes[0].x + pipes[0].width < 0) {
+        pipes.shift();
+        score++;
+      }
+  
+      // Collision detection
+      for (const pipe of pipes) {
+        if (
+          bird.x < pipe.x + pipe.width &&
+          bird.x + bird.width > pipe.x &&
+          (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom)
+        ) {
+          gameOver = true;
+        }
+      }
+  
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        gameOver = true;
+      }
+  
+      document.getElementById("score").textContent = score;
+    }
+  
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPipes();
+      drawBird();
+  
+      if (gameOver) {
+        ctx.fillStyle = "#e74c3c";
+        ctx.font = "40px Inter";
+        ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2);
+        ctx.font = "20px Inter";
+        ctx.fillText("Press Space to Retry", canvas.width / 2 - 100, canvas.height / 2 + 40);
+      }
+    }
+  
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+  
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        if (gameOver) {
+          reset();
+        }
+        bird.velocity = jump;
+      }
+    });
+  
+    loop();
+  </script>
+  
+  
+</body>
+</html>
